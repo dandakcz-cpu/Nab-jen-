@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nabíjení do 80 %</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #f6f6f6;
+      padding: 24px;
+    }
+    .card {
+      max-width: 420px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    h1 {
+      margin-top: 0;
+    }
+    input, button {
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #111;
+      color: white;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .note {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔌 Nabíjení do 80 %</h1>
+
+    <label>Aktuální stav baterie (%)</label>
+    <input type="number" id="percent" min="0" max="80" placeholder="např. 35">
+
+    <button onclick="calculate()">Spočítat čas</button>
+
+    <div class="result" id="result"></div>
+
+    <div class="note">
+      Baterie: 54 kWh<br>
+      Výkon nabíjení: 11 kW
+    </div>
+  </div>
+
+  <script>
+    function calculate() {
+      const current = Number(document.getElementById('percent').value);
+      const result = document.getElementById('result');
+
+      if (isNaN(current) || current < 0 || current >= 80) {
+        result.textContent = 'Zadej hodnotu mezi 0–79 %.';
+        return;
+      }
+
+      const battery = 54; // kWh
+      const power = 11;   // kW
+      const target = 80;
+
+      const neededPercent = target - current;
+      const neededKwh = battery * (neededPercent / 100);
+      const hours = neededKwh / power;
+      const minutes = Math.round(hours * 60);
+
+      result.textContent = `⏱️ Nabíjej ${minutes} minut`;
+    }
+  </script>
+</body>
+</html>
