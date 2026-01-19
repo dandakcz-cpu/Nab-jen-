@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nabíjení do 80 %</title>
+
+  <meta name="theme-color" content="#111111">
+
   <style>
     body {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -18,10 +21,8 @@
       border-radius: 14px;
       box-shadow: 0 10px 25px rgba(0,0,0,.08);
     }
-    h1 {
-      margin-top: 0;
-    }
-    input, button {
+    h1 { margin-top: 0; }
+    input {
       width: 100%;
       padding: 14px;
       font-size: 18px;
@@ -29,61 +30,86 @@
       border-radius: 10px;
       border: 1px solid #ccc;
     }
-    button {
-      background: #111;
-      color: white;
-      cursor: pointer;
-    }
     .result {
       margin-top: 20px;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
+      line-height: 1.4;
     }
-    .note {
-      margin-top: 10px;
+    .small {
       font-size: 14px;
-      color: #666;
+      color: #555;
+      margin-top: 6px;
     }
   </style>
 </head>
+
 <body>
-  <div class="card">
-    <h1>🔌 Nabíjení do 80 %</h1>
+<div class="card">
+  <h1>🔌 Nabíjení do 80 %</h1>
 
-    <label>Aktuální stav baterie (%)</label>
-    <input type="number" id="percent" min="0" max="80" placeholder="např. 35">
+  <label>Aktuální stav baterie (%)</label>
+  <input id="percent" type="number" min="0" max="79" placeholder="např. 35">
 
-    <button onclick="calculate()">Spočítat čas</button>
+  <div class="result" id="result"></div>
+  <div class="small">Zaokrouhleno nahoru na 30 min (Tesla Wallbox)</div>
+</div>
 
-    <div class="result" id="result"></div>
+<script>
+const BATTERY_KWH = 54;
+const POWER_KW = 11;
+const TARGET = 80;
 
-    <div class="note">
-      Baterie: 54 kWh<br>
-      Výkon nabíjení: 11 kW
-    </div>
-  </div>
+document.getElementById('percent').addEventListener('input', calculate);
 
-  <script>
-    function calculate() {
-      const current = Number(document.getElementById('percent').value);
-      const result = document.getElementById('result');
+function roundUpToNextSlot(date) {
+  const d = new Date(date);
+  const m = d.getMinutes();
 
-      if (isNaN(current) || current < 0 || current >= 80) {
-        result.textContent = 'Zadej hodnotu mezi 0–79 %.';
-        return;
-      }
+  if (m < 30) {
+    d.setMinutes(30, 0, 0);
+  } else {
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+  }
+  return d;
+}
 
-      const battery = 54; // kWh
-      const power = 11;   // kW
-      const target = 80;
+function roundUpTo30Minutes(minutes) {
+  return Math.ceil(minutes / 30) * 30;
+}
 
-      const neededPercent = target - current;
-      const neededKwh = battery * (neededPercent / 100);
-      const hours = neededKwh / power;
-      const minutes = Math.round(hours * 60);
+function formatTime(d) {
+  return d.toLocaleTimeString('cs-CZ', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
-      result.textContent = `⏱️ Nabíjej ${minutes} minut`;
-    }
-  </script>
+function calculate() {
+  const result = document.getElementById('result');
+  const currentPercent = Number(document.getElementById('percent').value);
+
+  if (isNaN(currentPercent) || currentPercent < 0 || currentPercent >= TARGET) {
+    result.textContent = '';
+    return;
+  }
+
+  const neededKwh = BATTERY_KWH * ((TARGET - currentPercent) / 100);
+  const rawMinutes = (neededKwh / POWER_KW) * 60;
+  const roundedMinutes = roundUpTo30Minutes(rawMinutes);
+
+  const now = new Date();
+  const start = roundUpToNextSlot(now);
+  const end = new Date(start.getTime() + roundedMinutes * 60000);
+
+  const hours = Math.floor(roundedMinutes / 60);
+  const mins = roundedMinutes % 60;
+
+  result.innerHTML = `
+    ⏱️ Doba nabíjení: ${hours} h ${mins} min<br>
+    ▶️ Od ${formatTime(start)} do ${formatTime(end)}
+  `;
+}
+</script>
 </body>
 </html>
